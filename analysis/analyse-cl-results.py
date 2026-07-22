@@ -18,25 +18,6 @@ def main():
 
     print("=== start analysis ===\n")
 
-    """
-    print("Available input data:")
-    for file in sorted(input_dir.glob("*.csv")):
-        print(f" - {file.name}")
-    print()
-
-    input_file_ca_binding_site = input("CA binding site data: ")
-    file_CA = input_dir / input_file_ca_binding_site
-    if not file_CA.exists():
-        print(f"Error: {input_file_ca_binding_site} not found.")
-        return
-    
-    input_file_exact_binding_site = input("exact binding site data: ")
-    file_exact = input_dir / input_file_exact_binding_site
-    if not file_exact.exists():
-        print(f"Error: {input_file_exact_binding_site} not found.")
-        return
-    """
-
     print("Available input folders:")
     folders = sorted([f for f in input_dir.iterdir() if f.is_dir()])
     for folder in folders:
@@ -85,56 +66,8 @@ def main():
     output_suffix = input("Output suffix: ")
     output_file = output_dir / f"{analysis_name}_{output_suffix}.csv"
 
-    """
-    df_CA = pd.read_csv(file_CA)
-    df_exact = pd.read_csv(file_exact)
-
-    result_df, result_value = analysis(df_CA, df_exact)
-    """
-
     result_df, result_dict = analysis(expected_files, output_file)
 
-    """
-    if result_value: 
-        print(f"Result value: {result_value:.2f} Å")
-
-    if result_df is not None and not result_df.empty:
-        result_df.to_csv(output_file, index=False)
-
-        print(f"\nDone! Output file was written to: ")
-        print(output_file)
-    """
-
-
-"""
-def average_cl_length_diff(df_CA: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
-    # Alle gemeinsamen Spalten außer alphafold_distance zum Matchen verwenden
-    merge_columns = [
-        col
-        for col in df_CA.columns
-            if col not in {
-            "alphafold_distance",
-            "reactive_atom1",
-            "reactive_atom2",
-        }
-    ]
-
-    merged = df_CA.merge(
-        df_exact,
-        on=merge_columns,
-        suffixes=("_ca", "_exact"),
-        how="inner",
-    )
-
-    merged["distance_difference"] = (
-        merged["alphafold_distance_exact"]
-        - merged["alphafold_distance_ca"]
-    )
-
-    average_difference = merged["distance_difference"].mean()
-
-    return merged, average_difference
-"""
 
 def compare_distances(files: dict, output_file: Path)-> tuple[pd.DataFrame, dict]: 
     validation_criterion = input(
