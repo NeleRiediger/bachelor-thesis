@@ -63,13 +63,12 @@ def main():
         return
     analysis = FUNCTIONS[analysis_name]
 
-    output_suffix = input("Output suffix: ")
-    output_file = output_dir / f"{analysis_name}_{output_suffix}.csv"
+    output_file = output_dir / f"{analysis_name}_{folder_name}.csv"
 
-    result_df, result_dict = analysis(expected_files, output_file)
+    analysis(expected_files, output_file)
 
 
-def compare_distances(files: dict, output_file: Path)-> tuple[pd.DataFrame, dict]: 
+def compare_distances(files: dict, output_file: Path) -> None: 
     validation_criterion = input(
         f"Validation criterion {sorted(VALIDATION_CRITERIA)}: "
     ).strip()
@@ -188,11 +187,101 @@ def compare_distances(files: dict, output_file: Path)-> tuple[pd.DataFrame, dict
     print(histogram_file)
     print(boxplot_file)
 
-    return merged, stats
 
+def compare_validation(files: dict, output_file: Path) -> None:
+    """
+    Compare CA-based and exact-atom validation results.
 
-def compare_validation(files: dict) -> pd.DataFrame:
-    return files
+    For each selected validation criterion:
+    - prints confusion matrix
+    - calculates invalid -> valid improvement
+    """
+
+    available_criteria = sorted(
+        {
+            key.replace("_CA", "").replace("_exact", "")
+            for key in files.keys()
+        }
+    )
+
+    validation_criteria = input(
+        f"Validation criteria {available_criteria} (comma separated): "
+    ).strip()
+
+    selected_criteria = [
+        criterion.strip()
+        for criterion in validation_criteria.split(",")
+    ]
+
+    for criterion in selected_criteria:
+        file_ca = files.get(f"{criterion}_CA")
+        file_exact = files.get(f"{criterion}_exact")
+
+        if file_ca is None or file_exact is None:
+            print(
+                f"\nSkipping {criterion}: missing CA or exact file"
+            )
+            continue
+
+        print("\n" + "=" * 60)
+        print(f"Validation criterion: {criterion}")
+        print("=" * 60)
+
+        ca_df = pd.read_csv(file_ca)
+        exact_df = pd.read_csv(file_exact)
+
+        if len(ca_df) != len(exact_df):
+            raise ValueError(
+                f"{criterion}: CA and exact files have different lengths"
+            )
+
+        ca_valid = (
+            ca_df["valid_crosslink"]
+            .astype(str)
+            .str.lower()
+            .eq("true")
+        )
+
+        exact_valid = (
+            exact_df["valid_crosslink"]
+            .astype(str)
+            .str.lower()
+            .eq("true")
+        )
+
+        confusion_matrix = pd.crosstab(
+            ca_valid,
+            exact_valid,
+            rownames=["CA"],
+            colnames=["Exact"]
+        )
+
+        confusion_matrix = confusion_matrix.reindex(
+            index=[True, False],
+            columns=[True, False],
+            fill_value=0
+        )
+
+        print("\nConfusion Matrix:")
+        print(confusion_matrix)
+
+        invalid_to_valid = (
+            (~ca_valid) & (exact_valid)
+        ).sum()
+
+        originally_invalid = (~ca_valid).sum()
+
+        improvement = (
+            invalid_to_valid / originally_invalid
+            if originally_invalid > 0
+            else 0
+        )
+
+        print(
+            f"\nInvalid → Valid improvement: "
+            f"{invalid_to_valid}/{originally_invalid} "
+            f"({improvement:.2%})"
+        )
 
 def compare_all_validation_methods(files: dict) -> pd.DataFrame:
     missing = [key for key, value in expected_files.items() if value is None]
