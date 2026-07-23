@@ -63,7 +63,9 @@ def main():
         return
     analysis = FUNCTIONS[analysis_name]
 
-    output_file = output_dir / f"{analysis_name}_{folder_name}.csv"
+    output_folder = output_dir / folder_name
+    output_folder.mkdir(exist_ok=True)
+    output_file = output_folder / f"{analysis_name}_{folder_name}.csv"
 
     analysis(expected_files, output_file)
 
@@ -123,6 +125,11 @@ def compare_distances(files: dict, output_file: Path) -> None:
     )
 
     merged["absolute_difference"] = merged["distance_difference"].abs()
+
+    merged = merged.sort_values(
+        "absolute_difference",
+        ascending=False
+    )
 
     stats = {
         "count": len(merged),
