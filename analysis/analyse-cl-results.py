@@ -316,7 +316,7 @@ def compare_validation(files: dict, output_file: Path) -> None:
             f"({deterioration:.2%})"
         )
 
-def compare_all_validation_methods(files: dict, output_file: Path) -> pd.DataFrame:
+def compare_all_validation_methods(files: dict, output_file: Path) -> None:
     results = []
 
     for criterion in VALIDATION_CRITERIA:
@@ -366,10 +366,128 @@ def compare_all_validation_methods(files: dict, output_file: Path) -> pd.DataFra
     print(output_file)
     
 
+def analyse_by_binding_site(files: dict, output_file: Path) -> None: 
+    validation_criterion = input(
+        f"Validation criterion {sorted(VALIDATION_CRITERIA)}: "
+    ).strip()
+
+    if validation_criterion not in VALIDATION_CRITERIA:
+        print(f"Unknown validation criterion: {validation_criterion}")
+        return None
+
+    ca_key = f"{validation_criterion}_CA"
+    exact_key = f"{validation_criterion}_exact"
+
+    missing = [
+        key for key in (ca_key, exact_key)
+        if files.get(key) is None
+    ]
+
+    if missing:
+        print("Missing files:")
+        for key in missing:
+            print(f" - {key}")
+        return None
+
+    df_ca = pd.read_csv(files[ca_key])
+    df_exact = pd.read_csv(files[exact_key])
+
+    merged = merge_dfs(df_ca, df_exact)
+
+    merged["distance_difference"] = (
+        merged["alphafold_distance_exact"]
+        - merged["alphafold_distance_ca"]
+    )
+
+    merged["validation_change"] = "unchanged"
+
+    merged.loc[
+        (~merged["valid_crosslink_ca"]) &
+        (merged["valid_crosslink_exact"]),
+        "validation_change"
+    ] = "became_valid"
+
+    merged.loc[
+        (merged["valid_crosslink_ca"]) &
+        (~merged["valid_crosslink_exact"]),
+        "validation_change"
+    ] = "became_invalid"
+
+
+    merged["atom_pair"] = (
+        merged["reactive_atom1_exact"].astype(str)
+        + "-"
+        + merged["reactive_atom2_exact"].astype(str)
+    )
+
+
+    analysis = (
+        merged
+        .groupby("atom_pair")
+        .agg(
+            count=("atom_pair", "size"),
+            mean_distance_change=(
+                "distance_difference",
+                "mean"
+            ),
+            median_distance_change=(
+                "distance_difference",
+                "median"
+            ),
+            became_valid=(
+                "validation_change",
+                lambda x: (x == "became_valid").sum()
+            ),
+            became_invalid=(
+                "validation_change",
+                lambda x: (x == "became_invalid").sum()
+            ),
+            unchanged=(
+                "validation_change",
+                lambda x: (x == "unchanged").sum()
+            ),
+        )
+        .reset_index()
+    )
+
+    analysis["improvement_rate"] = (
+        analysis["became_valid"]
+        /
+        analysis["count"]
+    )
+
+    analysis = analysis.sort_values(
+        [
+            "became_valid",
+            "improvement_rate"
+        ],
+        ascending=False
+    )
+
+    result_file = output_file.with_name(
+        output_file.stem + "_binding_atom_analysis.csv"
+    )
+
+    analysis.to_csv(
+        result_file,
+        index=False
+    )
+
+    print("\nBinding atom analysis")
+    print("=" * 90)
+    print(
+        analysis.to_string(index=False)
+    )
+
+    print(f"\nOutput written to:")
+    print(result_file)
+
+
 FUNCTIONS = {
     "compare_distances": compare_distances,
     "compare_validation": compare_validation,
     "compare_all_validation_methods": compare_all_validation_methods,
+    "analyse_by_binding_site": analyse_by_binding_site,
 }
 
 if __name__ == "__main__":
