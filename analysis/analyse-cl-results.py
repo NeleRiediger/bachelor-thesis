@@ -309,27 +309,57 @@ def compare_validation(files: dict, output_file: Path) -> None:
             f"({deterioration:.2%})"
         )
 
-def compare_all_validation_methods(files: dict) -> pd.DataFrame:
-    missing = [key for key, value in expected_files.items() if value is None]
+def compare_all_validation_methods(files: dict, output_file: Path) -> pd.DataFrame:
+    results = []
 
-    if missing:
-        print("Error: Missing files:")
-        for m in missing:
-            print(f" - *_{m}")
-        exit()
+    for criterion in VALIDATION_CRITERIA:
 
-    file_manual_CA = expected_files["manual_CA"]
-    file_manual_exact = expected_files["manual_exact"]
-    file_maxPAE_CA = expected_files["maxPAE_CA"]
-    file_maxPAE_exact = expected_files["maxPAE_exact"]
-    file_minPAE_CA = expected_files["minPAE_CA"]
-    file_minPAE_exact = expected_files["minPAE_exact"]
-    file_plDDT_CA = expected_files["plDDT_CA"]
-    file_plDDT_exact = expected_files["plDDT_exact"]
-    return files 
+        file_ca = files.get(f"{criterion}_CA")
+        file_exact = files.get(f"{criterion}_exact")
+
+        if file_ca is None or file_exact is None:
+            print(f"Skipping {criterion}: missing files.")
+            continue
+
+        df_ca = pd.read_csv(file_ca)
+        df_exact = pd.read_csv(file_exact)
+
+        merged = merge_dfs(df_ca, df_exact)
+
+        ca_valid = merged["valid_crosslink_ca"]
+        exact_valid = merged["valid_crosslink_exact"]
+
+        remained_valid = (ca_valid & exact_valid).sum()
+        remained_invalid = ((~ca_valid) & (~exact_valid)).sum()
+        became_valid = ((~ca_valid) & exact_valid).sum()
+        became_invalid = (ca_valid & (~exact_valid)).sum()
+
+        results.append(
+            {
+                "Method": criterion,
+                "Remained valid": int(remained_valid),
+                "Remained invalid": int(remained_invalid),
+                "Became valid": int(became_valid),
+                "Became invalid": int(became_invalid),
+                "Net gain": int(became_valid - became_invalid),
+                "Improvement": f"{became_valid / max(1, (~ca_valid).sum()):.1%}",
+            }
+        )
+
+    result = pd.DataFrame(results)
+
+    print("\nValidation changes by method")
+    print("=" * 90)
+    print(result.to_string(index=False))
+
+    if result is not None and not result.empty:
+        result.to_csv(output_file, index=False)
+
+    print(f"Output file was written to: ")
+    print(output_file)
+    
 
 FUNCTIONS = {
-    #"average_cl_length_diff": average_cl_length_diff,
     "compare_distances": compare_distances,
     "compare_validation": compare_validation,
     "compare_all_validation_methods": compare_all_validation_methods,
