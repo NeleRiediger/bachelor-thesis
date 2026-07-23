@@ -68,6 +68,28 @@ def main():
     analysis(expected_files, output_file)
 
 
+def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
+    merge_columns = [
+        col
+        for col in df_ca.columns
+        if col not in {
+            "alphafold_distance",
+            "reactive_atom1",
+            "reactive_atom2",
+            "valid_crosslink",
+        }
+    ]
+
+    merged = df_ca.merge(
+        df_exact,
+        on=merge_columns,
+        suffixes=("_ca", "_exact"),
+        how="inner",
+    )
+
+    return merged 
+
+
 def compare_distances(files: dict, output_file: Path) -> None: 
     validation_criterion = input(
         f"Validation criterion {sorted(VALIDATION_CRITERIA)}: "
@@ -90,25 +112,10 @@ def compare_distances(files: dict, output_file: Path) -> None:
             print(f" - *_{key}")
         return None
     
-    df_CA = pd.read_csv(files[ca_key])
+    df_ca = pd.read_csv(files[ca_key])
     df_exact = pd.read_csv(files[exact_key])
 
-    merge_columns = [
-        col
-        for col in df_CA.columns
-        if col not in {
-            "alphafold_distance",
-            "reactive_atom1",
-            "reactive_atom2",
-        }
-    ]
-
-    merged = df_CA.merge(
-        df_exact,
-        on=merge_columns,
-        suffixes=("_ca", "_exact"),
-        how="inner",
-    )
+    merged = merge_dfs(df_ca, df_exact)
 
     merged["distance_difference"] = (
         merged["alphafold_distance_exact"]
@@ -227,23 +234,20 @@ def compare_validation(files: dict, output_file: Path) -> None:
         print(f"Validation criterion: {criterion}")
         print("=" * 60)
 
-        ca_df = pd.read_csv(file_ca)
-        exact_df = pd.read_csv(file_exact)
+        df_ca = pd.read_csv(file_ca)
+        df_exact = pd.read_csv(file_exact)
 
-        if len(ca_df) != len(exact_df):
-            raise ValueError(
-                f"{criterion}: CA and exact files have different lengths"
-            )
+        merged = merge_dfs(df_ca, df_exact)
 
         ca_valid = (
-            ca_df["valid_crosslink"]
+            merged["valid_crosslink_ca"]
             .astype(str)
             .str.lower()
             .eq("true")
         )
 
         exact_valid = (
-            exact_df["valid_crosslink"]
+            merged["valid_crosslink_exact"]
             .astype(str)
             .str.lower()
             .eq("true")
@@ -251,9 +255,7 @@ def compare_validation(files: dict, output_file: Path) -> None:
 
         confusion_matrix = pd.crosstab(
             ca_valid,
-            exact_valid,
-            rownames=["CA"],
-            colnames=["Exact"]
+            exact_valid
         )
 
         confusion_matrix = confusion_matrix.reindex(
@@ -261,6 +263,12 @@ def compare_validation(files: dict, output_file: Path) -> None:
             columns=[True, False],
             fill_value=0
         )
+
+        confusion_matrix.index = ["valid", "invalid"]
+        confusion_matrix.columns = ["valid", "invalid"]
+
+        confusion_matrix.index.name = "CA"
+        confusion_matrix.columns.name = "Exact"
 
         print("\nConfusion Matrix:")
         print(confusion_matrix)
@@ -281,6 +289,24 @@ def compare_validation(files: dict, output_file: Path) -> None:
             f"\nInvalid → Valid improvement: "
             f"{invalid_to_valid}/{originally_invalid} "
             f"({improvement:.2%})"
+        )
+
+        valid_to_invalid = (
+            (ca_valid) & (~exact_valid)
+        ).sum()
+
+        originally_valid = (ca_valid).sum()
+
+        deterioration = (
+            valid_to_invalid / originally_valid
+            if originally_valid > 0
+            else 0
+        )
+
+        print(
+            f"\nValid → Invalid deterioration: "
+            f"{valid_to_invalid}/{originally_valid} "
+            f"({deterioration:.2%})"
         )
 
 def compare_all_validation_methods(files: dict) -> pd.DataFrame:
