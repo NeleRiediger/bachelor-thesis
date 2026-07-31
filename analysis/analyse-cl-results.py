@@ -72,15 +72,23 @@ def main():
 
 def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
     merge_columns = [
-        col
-        for col in df_ca.columns
-        if col not in {
-            "alphafold_distance",
-            "reactive_atom1",
-            "reactive_atom2",
-            "valid_crosslink",
-        }
+        "Protein1",
+        "Protein2",
+        "Protein_id1",
+        "Protein_id2",
+        "Is_intra_crosslink",
+        "Crosslinker",
+        "Peptide1",
+        "Peptide2",
+        "1_based_CL_position_within_peptide1",
+        "1_based_CL_position_within_peptide2",
+        "Q_value",
+        "Chain_id1",
+        "Chain_id2",
+        "1_based_crosslinker_position1",
+        "1_based_crosslinker_position2",
     ]
+    # especially "alphafold_distance", "reactive_atom1", "reactive_atom2", "valid_crosslink" can differ
 
     merged = df_ca.merge(
         df_exact,
