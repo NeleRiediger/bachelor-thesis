@@ -29,7 +29,7 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
         "max": merged["distance_difference"].max(),
     }
     stats_file = output_file.with_name(
-    output_file.stem + "_stats.csv"
+        output_file.stem + "_stats.csv"
     )
 
     pd.DataFrame([stats]).to_csv(
@@ -122,14 +122,17 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     plt.close()
 
 
+    output_df_file = output_file.with_name(
+        output_file.stem + "_df.csv"
+    )
     if not merged.empty:
         merged.to_csv(
-            output_file.stem + "_df.csv",
+            output_df_file,
             index=False
         )
 
     print("\nOutput files were written to:")
-    print(output_file)
+    print(output_df_file)
     print(stats_file)
     print(absolute_changes_file)
     print(histogram_file)
