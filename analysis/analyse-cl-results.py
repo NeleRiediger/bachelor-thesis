@@ -482,17 +482,26 @@ def main():
 
     print("=== start analysis ===\n")
 
+    folders = sorted(f for f in input_dir.iterdir() if f.is_dir())
+    if not folders:
+        raise FileNotFoundError(f"No input folders found in {input_dir}")
+
     print("Available input folders:")
-    folders = sorted([f for f in input_dir.iterdir() if f.is_dir()])
-    for folder in folders:
-        print(f" - {folder.name}")
+    for i, folder in enumerate(folders, start=1):
+        print(f"{i}: {folder.name}")
     print()
 
-    folder_name = input("Folder: ")
-    selected_folder = input_dir / folder_name
-    if not selected_folder.exists() or not selected_folder.is_dir():
-        print(f"Error: Folder '{folder_name}' not found.")
-        return
+    while True:
+        try:
+            choice = int(input(f"Select folder [1-{len(folders)}]: "))
+            if 1 <= choice <= len(folders):
+                selected_folder = folders[choice - 1]
+                break
+        except ValueError:
+            pass
+        print("Invalid selection.")
+
+    folder_name = selected_folder.name
 
     for file in selected_folder.iterdir():
         if not file.is_file():
@@ -505,27 +514,40 @@ def main():
                 expected_files[key] = file
                 break
 
+    analysis_names = list(FUNCTIONS.keys())
+
     print("\nAvailable analyses:")
-    for name in FUNCTIONS:
-        print(f" - {name}")
+    for i, name in enumerate(analysis_names, start=1):
+        print(f"{i}: {name}")
     print()
 
-    analysis_name = input("Analysis: ")
-    if analysis_name not in FUNCTIONS:
-        print(f"Error: '{analysis_name}' is not a valid analysis.")
-        return
-    analysis = FUNCTIONS[analysis_name]
+    while True:
+        try:
+            choice = int(input(f"Select analysis [1-{len(analysis_names)}]: "))
+            if 1 <= choice <= len(analysis_names):
+                analysis_name = analysis_names[choice - 1]
+                analysis = FUNCTIONS[analysis_name]
+                break
+        except ValueError:
+            pass
+
+        print("Invalid selection.")
 
     print("\nAvailable validation criteria:")
-    for criterion in validation_criteria:
-        print(f" - {criterion}")
+    for i, criterion in enumerate(validation_criteria, start=1):
+        print(f"{i}: {criterion}")
     print()
 
-    validation_criterion = input("Validation criterion: ")
+    while True:
+        try:
+            choice = int(input(f"Select validation criterion [1-{len(validation_criteria)}]: "))
+            if 1 <= choice <= len(validation_criteria):
+                validation_criterion = validation_criteria[choice - 1]
+                break
+        except ValueError:
+            pass
 
-    if validation_criterion not in validation_criteria:
-        print(f"Unknown validation criterion: {validation_criterion}")
-        return None
+        print("Invalid selection.")
 
     ca_key = f"{validation_criterion}_CA"
     exact_key = f"{validation_criterion}_exact"

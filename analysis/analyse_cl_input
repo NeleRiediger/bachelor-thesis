@@ -19,17 +19,23 @@ def choose_file() -> Path:
         raise FileNotFoundError(f"No input file available in {input_dir}")
 
     print("Available input:")
-    for file in files: 
-        print(f" - {file.name}")
+    for i, file in enumerate(files, start=1):
+        print(f"{i}: {file.name}")
     print()
-    
-    file_name = input("File: ")
-    selected_file = input_dir / file_name
-    if not selected_file.exists() or not selected_file.is_file():
-        print(f"Error: File '{file_name}' not found.")
-        return
-    
-    return selected_file
+
+    while True:
+        choice = input(f"Select file [1-{len(files)}]: ")
+
+        try:
+            choice = int(choice)
+        except ValueError:
+            print("Please enter a number.")
+            continue
+
+        if 1 <= choice <= len(files):
+            return files[choice - 1]
+
+        print("Invalid selection.")
 
 
 def load_file(path: Path) -> pd.DataFrame:
