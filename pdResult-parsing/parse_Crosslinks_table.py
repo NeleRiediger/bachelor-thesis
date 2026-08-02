@@ -2,8 +2,10 @@ import sqlite3
 import csv
 from pathlib import Path
 
-INPUT_FILE = "Cas9Cube_r1.pdResult"
-OUTPUT_FILE = "Cas9Cube_r1_CrossLinks.csv"
+SCRIPT_DIR = Path(__file__).parent
+
+INPUT_FILE = SCRIPT_DIR / "input" / "Annika_CDI_mainlin_rep2.pdResult"
+OUTPUT_FILE = SCRIPT_DIR / "output" / "Annika_CDI_mainlin_rep2_CrossLinks.csv"
 
 conn = sqlite3.connect(INPUT_FILE)
 cursor = conn.cursor()

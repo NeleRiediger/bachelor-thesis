@@ -3,9 +3,10 @@ from pathlib import Path
 
 import pandas as pd
 
+SCRIPT_DIR = Path(__file__).parent
 
-INPUT_FILE = Path("XlinkX_DSBU_mainlib_rep1.pdResult")
-OUTPUT_DIR = Path("pdResult_export")
+INPUT_FILE = SCRIPT_DIR / "input" / "XlinkX_CDI_mainlin_rep1.pdResult"
+OUTPUT_DIR = SCRIPT_DIR / "output" / "pdResult_export"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 

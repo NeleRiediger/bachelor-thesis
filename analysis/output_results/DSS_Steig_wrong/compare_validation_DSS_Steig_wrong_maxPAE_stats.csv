@@ -1,0 +1,6 @@
+category,count,percentage
+Unchanged,171,78.44036697247707
+Originally invalid (CA),114,52.293577981651374
+Originally valid (CA),104,47.706422018348626
+Invalid → Valid,24,21.052631578947366
+Valid → Invalid,23,22.115384615384613
