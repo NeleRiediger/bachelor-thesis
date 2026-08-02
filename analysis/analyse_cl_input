@@ -1,0 +1,85 @@
+from pathlib import Path
+
+import pandas as pd
+
+
+project_dir = Path(__file__).parent
+input_dir = project_dir / "input_raw"
+output_dir = project_dir / "output_raw"
+
+output_dir.mkdir(exist_ok=True)
+
+
+def choose_file() -> Path:
+    files = sorted(
+        list(input_dir.glob("*.csv"))
+    )
+
+    if not files:
+        raise FileNotFoundError(f"No input file available in {input_dir}")
+
+    print("Available input:")
+    for file in files: 
+        print(f" - {file.name}")
+    print()
+    
+    file_name = input("File: ")
+    selected_file = input_dir / file_name
+    if not selected_file.exists() or not selected_file.is_file():
+        print(f"Error: File '{file_name}' not found.")
+        return
+    
+    return selected_file
+
+
+def load_file(path: Path) -> pd.DataFrame:
+    if path.suffix == ".csv":
+        return pd.read_csv(path)
+    raise ValueError("File format not supported")
+
+
+def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    required = {"Protein_id1", "Protein_id2"}
+    missing = required - set(df.columns)
+
+    if missing:
+        raise ValueError(f"Missing column: {missing}")
+
+    pairs = (
+        df[["Protein_id1", "Protein_id2"]]
+        .apply(lambda row: tuple(sorted(row)), axis=1)
+    )
+
+    ranking = (
+        pairs.value_counts()
+        .rename_axis("Protein_Pair")
+        .reset_index(name="Count")
+    )
+
+    ranking[["Protein_id1", "Protein_id2"]] = pd.DataFrame(
+        ranking["Protein_Pair"].tolist(),
+        index=ranking.index,
+    )
+
+    ranking = ranking.drop(columns="Protein_Pair")
+
+    return ranking[
+        ["Protein_id1", "Protein_id2", "Count"]
+    ]
+
+
+def main():
+    selected_file = choose_file()
+    df = load_file(selected_file)
+    ranking = rank_protein_pairs(df)
+
+    print(ranking)
+
+    output_file = output_dir / f"{selected_file.stem}_protein_pair_ranking.csv"
+    ranking.to_csv(output_file, index=False)
+
+    print(f"\nOutput files were written to: {output_file}")
+
+
+if __name__ == "__main__":
+    main()

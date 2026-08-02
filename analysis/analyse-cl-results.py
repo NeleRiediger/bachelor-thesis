@@ -475,8 +475,8 @@ def main():
     ]
 
     project_dir = Path(__file__).parent
-    input_dir = project_dir / "input"
-    output_dir = project_dir / "output"
+    input_dir = project_dir / "input_results"
+    output_dir = project_dir / "output_results"
 
     output_dir.mkdir(exist_ok=True)
 
