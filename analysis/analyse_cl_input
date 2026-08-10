@@ -1,6 +1,11 @@
 from pathlib import Path
-
 import pandas as pd
+import sys
+
+script_dir = Path(__file__).resolve().parent
+project_dir = script_dir.parent
+sys.path.insert(0, str(project_dir))
+from helpers.input_file_selection import choose_file
 
 
 project_dir = Path(__file__).parent
@@ -8,34 +13,6 @@ input_dir = project_dir / "input_raw"
 output_dir = project_dir / "output_raw"
 
 output_dir.mkdir(exist_ok=True)
-
-
-def choose_file() -> Path:
-    files = sorted(
-        list(input_dir.glob("*.csv"))
-    )
-
-    if not files:
-        raise FileNotFoundError(f"No input file available in {input_dir}")
-
-    print("Available input:")
-    for i, file in enumerate(files, start=1):
-        print(f"{i}: {file.name}")
-    print()
-
-    while True:
-        choice = input(f"Select file [1-{len(files)}]: ")
-
-        try:
-            choice = int(choice)
-        except ValueError:
-            print("Please enter a number.")
-            continue
-
-        if 1 <= choice <= len(files):
-            return files[choice - 1]
-
-        print("Invalid selection.")
 
 
 def load_file(path: Path) -> pd.DataFrame:
@@ -75,7 +52,7 @@ def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    selected_file = choose_file()
+    selected_file = choose_file(input_dir, ".csv")
     df = load_file(selected_file)
     ranking = rank_protein_pairs(df)
 
