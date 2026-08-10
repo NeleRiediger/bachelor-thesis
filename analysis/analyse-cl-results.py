@@ -3,7 +3,17 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
+    """
+    Compares AlphaFold distances calculated using CA and exact binding atoms.
 
+    Calculates distance differences and summary statistics, exports the
+    results to CSV files, and generates a histogram and boxplot.
+
+    :param merged: DataFrame containing merged CA and exact-atom results.
+    :param output_file: Path used as the base name for output files.
+
+    :return: None.
+    """
     merged["distance_difference"] = (
         merged["alphafold_distance_exact"]
         - merged["alphafold_distance_ca"]
@@ -141,9 +151,16 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
 
 def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     """
-    Compare CA-based and exact-atom validation results.
-    """
+    Compares CA-based and exact-atom crosslink validation results.
 
+    Calculates a confusion matrix and summarizes changes between the two
+    validation results.
+
+    :param merged: DataFrame containing merged CA and exact-atom results.
+    :param output_file: Path used as the base name for output files.
+
+    :return: None.
+    """
     ca_valid = (
         merged["valid_crosslink_ca"]
         .astype(str)
@@ -429,6 +446,18 @@ def analyse_by_binding_site(files: dict, output_file: Path) -> None:
 
 
 def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merges CA-based and exact-atom DataFrames using shared crosslink data.
+
+    Columns containing distances, reactive atoms, and validation results
+    are excluded from the merge keys so they can be compared separately.
+
+    :param df_ca: DataFrame containing CA-based crosslink results.
+    :param df_exact: DataFrame containing exact-atom crosslink results.
+
+    :return: Merged DataFrame with CA and exact-atom columns distinguished
+        by suffixes.
+    """
     merge_columns = [
         "Protein1",
         "Protein2",
@@ -459,6 +488,14 @@ def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(): 
+    """
+    Runs the crosslink distance and validation analysis.
+
+    Allows the user to select an input folder, analysis, and validation
+    criterion before loading the corresponding CA and exact-atom results.
+
+    :return: None.
+    """
     expected_files = {
         "manual_CA": None,
         "manual_exact": None,

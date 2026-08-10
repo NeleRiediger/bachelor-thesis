@@ -16,6 +16,16 @@ output_dir.mkdir(exist_ok=True)
 
 
 def main():
+    """ 
+    Exports all tables from a selected PDResult SQLite database 
+    to individual CSV files and a combined Excel workbook.
+
+    The input PDResult file is selected from the input directory. 
+    The exported files are stored in a dedicated output directory 
+    named after the selected input file. 
+
+    :return: None. 
+    """
     selected_file = choose_file(input_dir, ".pdResult")
 
     conn = sqlite3.connect(selected_file)
@@ -55,8 +65,8 @@ def main():
     conn.close()
 
     print("\nDone!")
-    print(f"CSV files written to: {specific_output_dir}")
-    print(f"Excel workbook written to: {excel_path}")
+    print(f"CSV files were written to: {specific_output_dir}")
+    print(f"Excel workbook was written to: {excel_path}")
 
 
 if __name__ == "__main__":

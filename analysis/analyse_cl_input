@@ -15,13 +15,17 @@ output_dir = project_dir / "output_raw"
 output_dir.mkdir(exist_ok=True)
 
 
-def load_file(path: Path) -> pd.DataFrame:
-    if path.suffix == ".csv":
-        return pd.read_csv(path)
-    raise ValueError("File format not supported")
-
-
 def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ranks protein pairs by their number of occurrences.
+
+    Protein pairs are treated as unordered, so the order of the two
+    protein IDs does not affect their ranking.
+
+    :param df: DataFrame containing protein pair information.
+
+    :return: DataFrame containing protein pairs and their occurrence counts.
+    """
     required = {"Protein_id1", "Protein_id2"}
     missing = required - set(df.columns)
 
@@ -52,16 +56,22 @@ def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    selected_file = choose_file(input_dir, ".csv")
-    df = load_file(selected_file)
-    ranking = rank_protein_pairs(df)
+    """
+    Loads a selected CSV file, ranks protein pairs by occurrence,
+    and exports the ranking to a CSV file.
 
+    :return: None.
+    """
+    selected_file = choose_file(input_dir, ".csv")
+    df = pd.read_csv(selected_file)
+
+    ranking = rank_protein_pairs(df)
     print(ranking)
 
     output_file = output_dir / f"{selected_file.stem}_protein_pair_ranking.csv"
     ranking.to_csv(output_file, index=False)
 
-    print(f"\nOutput files were written to: {output_file}")
+    print(f"\nOutput file was written to: {output_file}")
 
 
 if __name__ == "__main__":
