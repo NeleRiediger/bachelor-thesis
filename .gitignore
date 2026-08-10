@@ -1,5 +1,7 @@
-# Ignore everything in the input directory
+# Ignore everything in these directories:
 pdResult-parsing/input/*
+pdResult-parsing/output/*
 
-# Keep the directory itself
+# Keep the directories themselves:
 !pdResult-parsing/input/.gitkeep
+!pdResult-parsing/output/.gitkeep
