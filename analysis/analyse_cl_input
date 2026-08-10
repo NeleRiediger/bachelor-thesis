@@ -16,42 +16,59 @@ output_dir.mkdir(exist_ok=True)
 
 
 def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    """ 
+    Ranks protein pairs by their number of occurrences. 
+    
+    Protein pairs are treated as unordered, 
+    so the order of the two protein IDs does not affect their ranking. 
+    Intra- and inter-protein crosslinks are ranked separately. 
+    
+    :param df: DataFrame containing protein pair information. 
+    
+    :return: DataFrame containing protein pairs, crosslink type, 
+        and occurrence counts. 
     """
-    Ranks protein pairs by their number of occurrences.
-
-    Protein pairs are treated as unordered, so the order of the two
-    protein IDs does not affect their ranking.
-
-    :param df: DataFrame containing protein pair information.
-
-    :return: DataFrame containing protein pairs and their occurrence counts.
-    """
-    required = {"Protein_id1", "Protein_id2"}
+    required = {
+        "Protein_id1", 
+        "Protein_id2",
+        "Is_intra_crosslink",
+    }
     missing = required - set(df.columns)
 
     if missing:
         raise ValueError(f"Missing column: {missing}")
 
     pairs = (
-        df[["Protein_id1", "Protein_id2"]]
-        .apply(lambda row: tuple(sorted(row)), axis=1)
+        df[[ 
+            "Protein_id1", 
+            "Protein_id2", 
+            "Is_intra_crosslink", 
+        ]]
+        .copy()
     )
 
-    ranking = (
-        pairs.value_counts()
-        .rename_axis("Protein_Pair")
-        .reset_index(name="Count")
+    pairs[["Protein_id1", "Protein_id2"]] = ( 
+        pairs[["Protein_id1", "Protein_id2"]] 
+        .apply( 
+            lambda row: pd.Series(sorted(row)), 
+            axis=1, 
+        ) 
     )
 
-    ranking[["Protein_id1", "Protein_id2"]] = pd.DataFrame(
-        ranking["Protein_Pair"].tolist(),
-        index=ranking.index,
+    ranking = ( 
+        pairs.value_counts() 
+        .reset_index(name="Count") 
+        .sort_values("Count", ascending=False) 
+        .reset_index(drop=True) 
     )
-
-    ranking = ranking.drop(columns="Protein_Pair")
 
     return ranking[
-        ["Protein_id1", "Protein_id2", "Count"]
+        [
+            "Protein_id1", 
+            "Protein_id2", 
+            "Is_intra_crosslink",
+            "Count",
+        ]
     ]
 
 
