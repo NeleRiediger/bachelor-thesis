@@ -1,53 +1,85 @@
 import sqlite3
 from pathlib import Path
-
 import pandas as pd
 
-SCRIPT_DIR = Path(__file__).parent
+script_dir = Path(__file__).parent
+input_dir = script_dir / "input"
+output_dir = script_dir / "output"
 
-INPUT_FILE = SCRIPT_DIR / "input" / "XlinkX_CDI_mainlin_rep1.pdResult"
-OUTPUT_DIR = SCRIPT_DIR / "output" / "pdResult_export"
-
-OUTPUT_DIR.mkdir(exist_ok=True)
+output_dir.mkdir(exist_ok=True)
 
 
-conn = sqlite3.connect(INPUT_FILE)
+def choose_file() -> Path:
+    files = sorted(
+        list(input_dir.glob("*.pdResult"))
+    )
 
-# Alle Tabellen finden
-tables = pd.read_sql_query(
-    """
-    SELECT name
-    FROM sqlite_master
-    WHERE type='table'
-    ORDER BY name
-    """,
-    conn,
-)["name"]
+    if not files:
+        raise FileNotFoundError(f"No input file available in {input_dir}")
 
-print(f"Found {len(tables)} tables.\n")
+    print("Available input:")
+    for i, file in enumerate(files, start=1):
+        print(f"{i}: {file.name}")
+    print()
 
-# Excel-Datei mit allen Tabellen
-excel_path = OUTPUT_DIR / "all_tables.xlsx"
+    while True:
+        choice = input(f"Select file [1-{len(files)}]: ")
 
-with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        try:
+            choice = int(choice)
+        except ValueError:
+            print("Please enter a number.")
+            continue
 
-    for table in tables:
-        print(f"Exporting {table}...")
+        if 1 <= choice <= len(files):
+            return files[choice - 1]
 
-        df = pd.read_sql_query(f'SELECT * FROM "{table}"', conn)
+        print("Invalid selection.")
 
-        # CSV
-        df.to_csv(
-            OUTPUT_DIR / f"{table}.csv",
-            index=False,
-        )
 
-        # Excel Sheet
-        sheet = table[:31]  # Excel erlaubt max. 31 Zeichen
-        df.to_excel(writer, sheet_name=sheet, index=False)
+def main():
+    selected_file = choose_file()
 
-conn.close()
+    conn = sqlite3.connect(selected_file)
 
-print("\nDone!")
-print(f"CSV files written to: {OUTPUT_DIR}")
-print(f"Excel workbook written to: {excel_path}")
+    tables = pd.read_sql_query(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table'
+        ORDER BY name
+        """,
+        conn,
+    )["name"]
+
+    print(f"Found {len(tables)} tables.\n")
+
+    specific_output_dir = output_dir / f"{selected_file.stem}_export"
+    specific_output_dir.mkdir(exist_ok=True)
+
+    excel_path = specific_output_dir / "all_tables.xlsx"
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+
+        for table in tables:
+            print(f"Exporting {table}...")
+
+            df = pd.read_sql_query(f'SELECT * FROM "{table}"', conn)
+
+            df.to_csv(
+                specific_output_dir / f"{table}.csv",
+                index=False,
+            )
+
+            sheet = table[:31]  
+            df.to_excel(writer, sheet_name=sheet, index=False)
+
+    conn.close()
+
+    print("\nDone!")
+    print(f"CSV files written to: {specific_output_dir}")
+    print(f"Excel workbook written to: {excel_path}")
+
+
+if __name__ == "__main__":
+    main()
