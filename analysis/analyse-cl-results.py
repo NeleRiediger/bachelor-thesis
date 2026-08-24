@@ -208,6 +208,9 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     originally_invalid = (~ca_valid).sum()
     originally_valid = (ca_valid).sum() 
 
+    finally_invalid = (~exact_valid).sum()
+    finally_valid = (exact_valid).sum() 
+
     invalid_to_valid = (
         (~ca_valid) & (exact_valid)
     ).sum()
@@ -246,6 +249,16 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
             if originally_valid > 0
             else 0,
         },
+        {
+            "category": "Finally invalid (Exact)",
+            "count": finally_invalid,
+            "percentage": finally_invalid / len(merged) * 100,
+        },
+        {
+            "category": "Finally valid (Exact)",
+            "count": finally_valid,
+            "percentage": finally_valid / len(merged) * 100,
+        },
     ]
 
     validation_changes_df = pd.DataFrame(validation_changes)
@@ -268,6 +281,12 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
             f"{row['count']:5.0f} "
             f"({row['percentage']:5.1f}%)"
         )
+
+    print("\nLatex formatting")
+    print("-" * 40)
+    print(r"Classification & $C\alpha$ atom & Changes & exact reactive atom \\")
+    print(fr"Valid & {(originally_valid/ len(merged) * 100):.2f}\% & {(valid_to_invalid/ originally_valid * 100):.2f}\% & {(finally_valid/ len(merged) * 100):.2f}\% \\")
+    print(fr"Invalid & {(originally_invalid/ len(merged) * 100):.2f}\% & {(invalid_to_valid/ originally_invalid * 100):.2f}\% & {(finally_invalid/ len(merged) * 100):.2f}\% \\")
 
     print("\nOutput files were written to:")
     print(confusion_matrix_file)
