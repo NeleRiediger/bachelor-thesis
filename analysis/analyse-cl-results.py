@@ -219,6 +219,24 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
         (ca_valid) & (~exact_valid)
     ).sum()
 
+    stacked_bar_chart_file = output_file.with_name(
+        output_file.stem + "_stacked_bar_chart.png"
+    )
+
+    approaches = ["C\N{GREEK SMALL LETTER ALPHA} atoms", "exact reactive atoms"]
+    valid = [originally_valid/ len(merged) * 100, finally_valid/ len(merged) * 100]
+    invalid = [originally_invalid/ len(merged) * 100, finally_invalid/ len(merged) * 100]
+
+    plt.bar(approaches, valid, label="Valid")
+    plt.bar(approaches, invalid, bottom=valid, label="Invalid")
+
+    plt.ylabel("Crosslinks (%)")
+    plt.ylim(0, 100)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(stacked_bar_chart_file, dpi=300)
+    plt.close()
+
     validation_changes = [
         {
             "category": "Unchanged",
@@ -288,10 +306,13 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     print(fr"Valid & {(originally_valid/ len(merged) * 100):.2f}\% & {(valid_to_invalid/ originally_valid * 100):.2f}\% & {(finally_valid/ len(merged) * 100):.2f}\% \\")
     print(fr"Invalid & {(originally_invalid/ len(merged) * 100):.2f}\% & {(invalid_to_valid/ originally_invalid * 100):.2f}\% & {(finally_invalid/ len(merged) * 100):.2f}\% \\")
 
+    print("\nunconditional overall distribution")
+    print("-" * 40)
+
     print("\nOutput files were written to:")
     print(confusion_matrix_file)
     print(validation_changes_file)
-     
+    print(stacked_bar_chart_file)
 
 """
 def compare_all_validation_methods(files: dict, output_file: Path) -> None:
