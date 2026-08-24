@@ -200,6 +200,83 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     )
     confusion_matrix.to_csv(confusion_matrix_file)
 
+    transition_matrix_counts = pd.crosstab(
+        pd.Categorical(
+            ca_valid, 
+            categories=[True, False]
+        ),
+        pd.Categorical(
+            exact_valid, 
+            categories=[True, False]
+        ),
+        margins=True
+    )
+    transition_matrix_counts.index = [r"$C\alpha$ Valid", r"$C\alpha$ Invalid", "Exact Total"]
+    transition_matrix_counts.columns = ["Exact Valid", "Exact Invalid", r"$C\alpha$ Total"]
+    #transition_matrix_counts.index.name = r"$C\alpha$"
+    #transition_matrix_counts.columns.name = "Exact"
+
+    transition_matrix_percentages = pd.crosstab(
+        pd.Categorical(
+            ca_valid, 
+            categories=[True, False]
+        ),
+        pd.Categorical(
+            exact_valid, 
+            categories=[True, False]
+        ),
+        normalize="index"
+    ) * 100
+    transition_matrix_percentages.index = [r"$C\alpha$ Valid", r"$C\alpha$ Invalid"]
+    transition_matrix_percentages.columns = ["Exact Valid", "Exact Invalid"]
+
+    total = len(merged)
+    ca_total_percentages = transition_matrix_counts.loc[[r"$C\alpha$ Valid", r"$C\alpha$ Invalid"], r"$C\alpha$ Total"] / total * 100
+    exact_total_percentages = transition_matrix_counts.loc["Exact Total", ["Exact Valid", "Exact Invalid"]] / total * 100
+    
+    transition_matrix_whole = transition_matrix_counts.astype(str)
+    for row in [r"$C\alpha$ Valid", r"$C\alpha$ Invalid"]:
+        for column in ["Exact Valid", "Exact Invalid"]:
+            count = transition_matrix_counts.loc[row, column]
+            percentage = transition_matrix_percentages.loc[row, column]
+            transition_matrix_whole.loc[row, column] = (
+                f"{count} ({percentage:.2f}\\%)"
+            )
+
+    for row in [r"$C\alpha$ Valid", r"$C\alpha$ Invalid"]:
+        count = transition_matrix_counts.loc[row, r"$C\alpha$ Total"]
+        percentage = ca_total_percentages.loc[row]
+        transition_matrix_whole.loc[row, r"$C\alpha$ Total"] = (
+            f"{count} ({percentage:.2f}\\%)"
+        )
+    
+    for column in ["Exact Valid", "Exact Invalid"]:
+        count = transition_matrix_counts.loc["Exact Total", column]
+        percentage = exact_total_percentages.loc[column]
+        transition_matrix_whole.loc["Exact Total", column] = (
+            f"{count} ({percentage:.2f}\\%)"
+        )
+
+    transition_matrix_whole.loc["Exact Total", r"$C\alpha$ Total"] = f"{total} (100.00\\%)"
+
+    transition_matrix_file = output_file.with_name(
+        output_file.stem + "_transition_matrix.csv"
+    )
+    transition_matrix_whole.to_csv(transition_matrix_file)
+
+    transition_matrix_latex_file = output_file.with_name(
+        output_file.stem + "_transition_matrix_latex.tex"
+    )
+    transition_matrix_latex = transition_matrix_whole.to_latex(
+        escape=False
+    )
+    with open(transition_matrix_latex_file, "w") as f:
+        f.write(transition_matrix_latex)
+
+    print("\nTransition Matrix:")
+    print("-" * 40)
+    print(transition_matrix_whole)
+
     unchanged = (
         ((ca_valid) & (exact_valid)) |
         ((~ca_valid) & (~exact_valid))
@@ -306,13 +383,11 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     print(fr"Valid & {(originally_valid/ len(merged) * 100):.2f}\% & {(valid_to_invalid/ originally_valid * 100):.2f}\% & {(finally_valid/ len(merged) * 100):.2f}\% \\")
     print(fr"Invalid & {(originally_invalid/ len(merged) * 100):.2f}\% & {(invalid_to_valid/ originally_invalid * 100):.2f}\% & {(finally_invalid/ len(merged) * 100):.2f}\% \\")
 
-    print("\nunconditional overall distribution")
-    print("-" * 40)
-
     print("\nOutput files were written to:")
     print(confusion_matrix_file)
     print(validation_changes_file)
     print(stacked_bar_chart_file)
+    print(transition_matrix_latex_file)
 
 """
 def compare_all_validation_methods(files: dict, output_file: Path) -> None:
