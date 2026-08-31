@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import math 
 from pathlib import Path
 
 def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
@@ -106,11 +108,11 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     plt.figure(figsize=(8, 5))
     plt.hist(
         merged["distance_difference"],
-        bins=40
+        bins="auto" 
     )
     plt.xlabel("Distance difference (Å)")
     plt.ylabel("Number of crosslinks")
-    plt.title("Distribution of distance differences")
+    plt.xlim(math.floor(merged["distance_difference"].min()), math.ceil(merged["distance_difference"].max()))
     plt.tight_layout()
     plt.savefig(histogram_file, dpi=300)
     plt.close()
@@ -131,6 +133,23 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     plt.savefig(boxplot_file, dpi=300)
     plt.close()
 
+    ecdf_file = output_file.with_name(
+        output_file.stem + "_ecdf.png"
+    )
+
+    x = np.sort(merged["absolute_difference"])
+    y = np.arange(1, len(x)+1) / len(x)*100
+
+    plt.figure(figsize=(8, 5))
+    plt.step(x, y, where="post")
+    plt.xlabel("Absolute distance change (Å)")
+    plt.ylabel("Cumulative percentage of crosslinks (%)")
+    plt.xlim(math.floor(merged["absolute_difference"].min()), math.ceil(merged["absolute_difference"].max()))
+    plt.ylim(0, 100)
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(ecdf_file, dpi=300)
+    plt.close()
 
     output_df_file = output_file.with_name(
         output_file.stem + "_df.csv"
@@ -147,6 +166,7 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     print(absolute_changes_file)
     print(histogram_file)
     print(boxplot_file)
+    print(ecdf_file)
 
 
 def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
@@ -213,8 +233,6 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     )
     transition_matrix_counts.index = [r"$C\alpha$ Valid", r"$C\alpha$ Invalid", "Exact Total"]
     transition_matrix_counts.columns = ["Exact Valid", "Exact Invalid", r"$C\alpha$ Total"]
-    #transition_matrix_counts.index.name = r"$C\alpha$"
-    #transition_matrix_counts.columns.name = "Exact"
 
     transition_matrix_percentages = pd.crosstab(
         pd.Categorical(
