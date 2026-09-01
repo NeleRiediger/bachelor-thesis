@@ -195,31 +195,6 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
         .eq("true")
     )
 
-    confusion_matrix = pd.crosstab(
-        ca_valid,
-        exact_valid
-    )
-
-    confusion_matrix = confusion_matrix.reindex(
-        index=[True, False],
-        columns=[True, False],
-        fill_value=0
-    )
-
-    confusion_matrix.index = ["valid", "invalid"]
-    confusion_matrix.columns = ["valid", "invalid"]
-
-    confusion_matrix.index.name = "CA"
-    confusion_matrix.columns.name = "Exact"
-
-    print("\nConfusion Matrix:")
-    print(confusion_matrix)
-
-    confusion_matrix_file = output_file.with_name(
-        output_file.stem + "_confusion_matrix.csv"
-    )
-    confusion_matrix.to_csv(confusion_matrix_file)
-
     transition_matrix_counts = pd.crosstab(
         pd.Categorical(
             ca_valid, 
@@ -229,7 +204,8 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
             exact_valid, 
             categories=[True, False]
         ),
-        margins=True
+        margins=True,
+        dropna=False,
     )
     transition_matrix_counts.index = [r"$C\alpha$ Valid", r"$C\alpha$ Invalid", "Exact Total"]
     transition_matrix_counts.columns = ["Exact Valid", "Exact Invalid", r"$C\alpha$ Total"]
@@ -243,7 +219,8 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
             exact_valid, 
             categories=[True, False]
         ),
-        normalize="index"
+        normalize="index",
+        dropna=False, 
     ) * 100
     transition_matrix_percentages.index = [r"$C\alpha$ Valid", r"$C\alpha$ Invalid"]
     transition_matrix_percentages.columns = ["Exact Valid", "Exact Invalid"]
@@ -402,7 +379,6 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     print(fr"Invalid & {(originally_invalid/ len(merged) * 100):.2f}\% & {(invalid_to_valid/ originally_invalid * 100):.2f}\% & {(finally_invalid/ len(merged) * 100):.2f}\% \\")
 
     print("\nOutput files were written to:")
-    print(confusion_matrix_file)
     print(validation_changes_file)
     print(stacked_bar_chart_file)
     print(transition_matrix_latex_file)

@@ -4,3 +4,5 @@ Originally invalid (CA),37,100.0
 Originally valid (CA),0,0.0
 Invalid → Valid,2,5.405405405405405
 Valid → Invalid,0,0.0
+Finally invalid (Exact),35,94.5945945945946
+Finally valid (Exact),2,5.405405405405405
