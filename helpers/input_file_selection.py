@@ -19,6 +19,9 @@ def choose_file(input_dir: Path, file_type: str) -> Path:
     while True:
         choice = input(f"Select file [1-{len(files)}]: ")
 
+        if choice == ".":
+            return None
+
         try:
             choice = int(choice)
         except ValueError:
