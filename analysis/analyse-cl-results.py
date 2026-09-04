@@ -4,6 +4,15 @@ import numpy as np
 import math 
 from pathlib import Path
 
+def highlight_validation(row):
+    if row["valid_crosslink_ca"] == True and row["valid_crosslink_exact"] == False: 
+        return ["background-color: orange"] * len(row)
+
+    if row["valid_crosslink_ca"] == False and row["valid_crosslink_exact"] == True: 
+        return ["background-color: lightblue"] * len(row)
+
+    return [""] * len(row)
+
 def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     """
     Compares AlphaFold distances calculated using CA and exact binding atoms.
@@ -112,7 +121,11 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     )
     plt.xlabel("Distance difference (Å)")
     plt.ylabel("Number of crosslinks")
-    plt.xlim(math.floor(merged["distance_difference"].min()), math.ceil(merged["distance_difference"].max()))
+
+    xmin = math.floor(merged["distance_difference"].min())
+    xmax = math.ceil(merged["distance_difference"].max())
+    plt.xlim(xmin, xmax)
+    #plt.xticks(range(xmin, xmax+1, 5))
     plt.tight_layout()
     plt.savefig(histogram_file, dpi=300)
     plt.close()
@@ -151,11 +164,12 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     plt.savefig(ecdf_file, dpi=300)
     plt.close()
 
+    styled = merged.style.apply(highlight_validation, axis=1)
     output_df_file = output_file.with_name(
-        output_file.stem + "_df.csv"
+        output_file.stem + "_df.xlsx"
     )
     if not merged.empty:
-        merged.to_csv(
+        styled.to_excel(
             output_df_file,
             index=False
         )
@@ -713,6 +727,11 @@ def main():
     
     df_ca = pd.read_csv(expected_files[ca_key])
     df_exact = pd.read_csv(expected_files[exact_key])
+
+    duplicate_columns_ca = df_ca.columns.difference(["id"])
+    df_ca = df_ca.drop_duplicates(subset=duplicate_columns_ca)
+    duplicate_columns_exact = df_exact.columns.difference(["id"])
+    df_exact = df_exact.drop_duplicates(subset=duplicate_columns_exact)
 
     merged = merge_dfs(df_ca, df_exact)
 
