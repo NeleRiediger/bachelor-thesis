@@ -4,6 +4,101 @@ import numpy as np
 import math 
 from pathlib import Path
 
+def add_coloring_info_column(df):
+    conditions = [
+        (df["valid_crosslink_ca"] == True) & (df["valid_crosslink_exact"] == False),
+        (df["valid_crosslink_ca"] == False) & (df["valid_crosslink_exact"] == True), 
+    ]
+    choices = ["orange", "lightblue"]
+    df = df.copy()
+    df["color"] = np.select(conditions, choices, default="none")
+    return df
+
+def create_relevant_df_excerpt(df):
+    group_columns = [
+        "Protein_id1",
+        "reactive_atom1_ca",
+        "reactive_atom2_ca",
+        "alphafold_distance_ca",
+        "valid_crosslink_ca",
+        "reactive_atom1_exact",
+        "reactive_atom2_exact",
+        "alphafold_distance_exact",
+        "valid_crosslink_exact",
+        "relevant_pae_exact",
+        "distance_difference",
+        "absolute_difference",
+    ]
+    df["alphafold_distance_ca"] = df["alphafold_distance_ca"].round(2)
+    df["alphafold_distance_exact"] = df["alphafold_distance_exact"].round(2)
+    df["relevant_pae_exact"] = df["relevant_pae_exact"].round(2)
+    df["distance_difference"] = df["distance_difference"].round(2)
+    df["absolute_difference"] = df["absolute_difference"].round(2)
+    result = (
+        df[group_columns]
+        .groupby(group_columns, dropna=False)
+        .size()
+        .reset_index(name="count")
+    )
+    result = result.sort_values(
+        "absolute_difference",
+        ascending=False
+    )
+
+    n = 26
+    start = 30
+    middle = result.iloc[start:start+n]
+
+    color_annotated_df = add_coloring_info_column(middle)
+
+    return color_annotated_df 
+
+def create_reduced_df(df):
+    group_columns = [
+        "Protein_id1",
+        "reactive_atom1_ca",
+        "reactive_atom2_ca",
+        "alphafold_distance_ca",
+        "valid_crosslink_ca",
+        "reactive_atom1_exact",
+        "reactive_atom2_exact",
+        "alphafold_distance_exact",
+        "valid_crosslink_exact",
+        #"relevant_pae_exact",
+        "distance_difference",
+        "absolute_difference",
+    ]
+    df["alphafold_distance_ca"] = df["alphafold_distance_ca"].round(2)
+    df["alphafold_distance_exact"] = df["alphafold_distance_exact"].round(2)
+    #df["relevant_pae_exact"] = df["relevant_pae_exact"].round(2)
+    df["distance_difference"] = df["distance_difference"].round(2)
+    df["absolute_difference"] = df["absolute_difference"].round(2)
+    result = (
+        df[group_columns]
+        .groupby(group_columns, dropna=False)
+        .size()
+        .reset_index(name="count")
+    )
+    result = result.sort_values(
+        "absolute_difference",
+        ascending=False
+    )
+    
+    if len(result) > 28:
+        first = result.head(12)
+        last = result.tail(12)
+        omitted=pd.DataFrame(
+            [["..."] * len(result.columns)],
+            columns = result.columns
+        )
+        display_df = pd.concat(
+            [first, omitted, last],
+            ignore_index=True
+        )
+    else:
+        display_df = result.copy()
+    return display_df 
+
 def highlight_validation(row):
     if row["valid_crosslink_ca"] == True and row["valid_crosslink_exact"] == False: 
         return ["background-color: orange"] * len(row)
@@ -174,6 +269,18 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
             index=False
         )
 
+    reduced_df = create_reduced_df(merged)
+    output_reduced_df_file = output_file.with_name(
+        output_file.stem + "_df_reduced.csv"
+    )
+    reduced_df.to_csv(output_reduced_df_file)
+
+    excerpt_df = create_relevant_df_excerpt(merged)
+    output_excerpt_df_file = output_file.with_name(
+        output_file.stem + "_df_excerpt.csv"
+    )
+    excerpt_df.to_csv(output_excerpt_df_file)
+
     print("\nOutput files were written to:")
     print(output_df_file)
     print(stats_file)
@@ -181,6 +288,7 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     print(histogram_file)
     print(boxplot_file)
     print(ecdf_file)
+    print(output_reduced_df_file)
 
 
 def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:

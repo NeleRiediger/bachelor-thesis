@@ -19,7 +19,8 @@ def create_separate_histograms(dfs, output_file):
     labels = [
         "Amine-Reactive",
         "Carboxyl-Reactive",
-        "Disulfide Bonds"
+        "Disulfide Bonds", 
+        "Zero-Length"
     ]
 
     #all_values = pd.concat(
@@ -28,7 +29,7 @@ def create_separate_histograms(dfs, output_file):
     #bins = np.histogram_bin_edges(all_values, bins="auto")
 
     fig, axes = plt.subplots(
-        1, 3,
+        1, 4,
         figsize=(15,5),
     )
 
@@ -62,7 +63,8 @@ def create_histogram(dfs, output_file):
     labels = [
         "Amine-Reactive",
         "Carboxyl-Reactive",
-        "Disulfide Bonds"
+        "Disulfide Bonds",
+        "Zero-Length"
     ]
 
     all_values = pd.concat(
@@ -196,6 +198,7 @@ def main():
         selected_dirs.append(selected_folder)
 
     output_file = output_dir / "joined_histograms.png"
+    output_file_separate = output_dir / "joined_histograms_separate.png"
 
     if not selected_dirs: 
         print("No directories selected.")
@@ -203,8 +206,8 @@ def main():
     
     try: 
         dfs = prepare_all_data(selected_dirs)
-        #create_histogram(dfs, output_file)
-        create_separate_histograms(dfs, output_file)
+        create_histogram(dfs, output_file)
+        create_separate_histograms(dfs, output_file_separate)
 
     except ValueError as error: 
         print(f"\nError: {error}")
@@ -212,6 +215,7 @@ def main():
 
     print("\nOutput file was written to:")
     print(output_file)
+    print(output_file_separate)
 
 
 if __name__ == "__main__":

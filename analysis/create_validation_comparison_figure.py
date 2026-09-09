@@ -43,7 +43,7 @@ def main():
 
     output_dir.mkdir(exist_ok=True)
 
-    crosslinkers = ["Amine-Reactive", "Carboxyl-Reactive", "Disulfide Bonds"]
+    crosslinkers = ["Amine-Reactive", "Carboxyl-Reactive", "Disulfide Bonds", "Zero-Length"]
 
     validation_comparison_ca_file = output_dir / "validity_comparison_ca.png"
 
@@ -53,11 +53,14 @@ def main():
     carboxyl_reactive_valid_ca = 41.49
     carboxyl_reactive_invalid_ca = 58.51
 
-    disulfide_bonds_valid_ca = 10.40
-    disulfide_bonds_invalid_ca = 89.60
+    disulfide_bonds_valid_ca = 9.06
+    disulfide_bonds_invalid_ca = 90.94
 
-    valid_ca = [amine_reactive_valid_ca, carboxyl_reactive_valid_ca, disulfide_bonds_valid_ca]
-    invalid_ca = [amine_reactive_invalid_ca, carboxyl_reactive_invalid_ca, disulfide_bonds_invalid_ca]
+    zero_length_valid_ca = 0
+    zero_length_invalid_ca = 100
+
+    valid_ca = [amine_reactive_valid_ca, carboxyl_reactive_valid_ca, disulfide_bonds_valid_ca, zero_length_valid_ca]
+    invalid_ca = [amine_reactive_invalid_ca, carboxyl_reactive_invalid_ca, disulfide_bonds_invalid_ca, zero_length_invalid_ca]
 
     create_stacked_bar_chart(
         crosslinkers=crosslinkers,
@@ -78,11 +81,14 @@ def main():
     carboxyl_reactive_valid_exact = 37.23
     carboxyl_reactive_invalid_exact = 62.77
 
-    disulfide_bonds_valid_exact = 97.45
-    disulfide_bonds_invalid_exact = 2.55
+    disulfide_bonds_valid_exact = 96.12
+    disulfide_bonds_invalid_exact = 3.88
 
-    valid_exact = [amine_reactive_valid_exact, carboxyl_reactive_valid_exact, disulfide_bonds_valid_exact ]
-    invalid_exact = [amine_reactive_invalid_exact, carboxyl_reactive_invalid_exact, disulfide_bonds_invalid_exact]
+    zero_length_valid_exact = 31.43
+    zero_length_invalid_exact = 68.57
+
+    valid_exact = [amine_reactive_valid_exact, carboxyl_reactive_valid_exact, disulfide_bonds_valid_exact, zero_length_valid_exact ]
+    invalid_exact = [amine_reactive_invalid_exact, carboxyl_reactive_invalid_exact, disulfide_bonds_invalid_exact, zero_length_invalid_exact]
 
     create_stacked_bar_chart(
         crosslinkers=crosslinkers,
