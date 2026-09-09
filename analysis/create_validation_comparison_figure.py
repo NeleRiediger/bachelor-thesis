@@ -2,6 +2,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.size": 14,
+    })
+    
     plt.bar(crosslinkers, valid, label="Valid")
     plt.bar(crosslinkers, invalid, bottom=valid, label="Invalid")
 
@@ -11,15 +16,31 @@ def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
             val/2,
             f"{val:.2f}%",
             ha="center",
-            va="center"
+            va="center",
+            fontsize=14,
+            fontfamily="serif"
         )
-        if inval < 5:
+
+        if round(inval,2) == 0:
+            plt.text(
+                i,
+                inval+2,
+                f"{inval:.2f}%",
+                ha="center",
+                va="bottom",
+                fontsize=14,
+                fontfamily="serif"
+            )
+            
+        elif inval < 5:
             plt.text(
                 i,
                 val+inval/1,
                 f"{inval:.2f}%",
                 ha="center",
-                va="bottom"
+                va="bottom",
+                fontsize=14,
+                fontfamily="serif"
             )
         else: 
             plt.text(
@@ -27,12 +48,20 @@ def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
                 val+inval/2,
                 f"{inval:.2f}%",
                 ha="center",
-                va="center"
+                va="center",
+                fontsize=14,
+                fontfamily="serif"
             )
 
-    plt.ylabel("Crosslinks (%)")
+    plt.ylabel(
+        "Crosslinks (%)",
+        fontsize=16,
+        fontfamily="serif"
+    )
     plt.ylim(0, 100)
-    plt.legend()
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.legend(fontsize=14)
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     plt.close()
@@ -43,7 +72,12 @@ def main():
 
     output_dir.mkdir(exist_ok=True)
 
-    crosslinkers = ["Amine-Reactive", "Carboxyl-Reactive", "Disulfide Bonds", "Zero-Length"]
+    crosslinkers = [
+        "Amine-\nReactive", 
+        "Carboxyl-\nReactive", 
+        "Disulfide\nBonds", 
+        "Zero-\nLength"
+    ]
 
     validation_comparison_ca_file = output_dir / "validity_comparison_ca.png"
 

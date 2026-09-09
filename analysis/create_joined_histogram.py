@@ -51,9 +51,21 @@ def create_separate_histograms(dfs, output_file):
         xmax=np.ceil(values.max())
         ax.set_xlim(xmin, xmax)
 
-        ax.set_title(label)
-        ax.set_xlabel("Distance difference (Å)")
-        ax.set_ylabel("Crosslinks (%)")
+        ax.set_title(label, fontsize=16, fontfamily="serif")
+        ax.set_xlabel(
+            "Distance difference (Å)",
+            fontsize=16,
+            fontfamily="serif"
+        )
+        ax.set_ylabel(
+            "Crosslinks (%)",
+            fontsize=16,
+            fontfamily="serif"
+        )
+
+        ax.tick_params(axis="both", labelsize=14)
+        for tick in ax.get_xticklabels() + ax.get_yticklabels():
+            tick.set_fontfamily("serif")
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)

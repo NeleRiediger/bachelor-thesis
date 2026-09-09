@@ -249,10 +249,17 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     y = np.arange(1, len(x)+1) / len(x)*100
 
     plt.figure(figsize=(8, 5))
+    plt.rcParams["font.family"]="serif"
+    plt.rcParams["font.size"]=14
     plt.step(x, y, where="post")
-    plt.xlabel("Absolute distance change (Å)")
-    plt.ylabel("Cumulative percentage of crosslinks (%)")
-    plt.xlim(math.floor(merged["absolute_difference"].min()), math.ceil(merged["absolute_difference"].max()))
+    plt.xlabel("Absolute distance change (Å)", fontsize=16)
+    plt.ylabel("Cumulative percentage of crosslinks (%)", fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.xlim(
+        math.floor(merged["absolute_difference"].min()), 
+        math.ceil(merged["absolute_difference"].max())
+    )
     plt.ylim(0, 100)
     plt.grid(alpha=0.3)
     plt.tight_layout()
