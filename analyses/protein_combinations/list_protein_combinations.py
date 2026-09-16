@@ -72,12 +72,6 @@ def rank_protein_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    """
-    Loads a selected CSV file, ranks protein pairs by occurrence,
-    and exports the ranking to a CSV file.
-
-    :return: None.
-    """
     selected_file = choose_file(input_dir, ".csv")
     df = pd.read_csv(selected_file)
 

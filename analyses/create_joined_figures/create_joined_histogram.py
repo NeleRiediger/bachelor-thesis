@@ -3,20 +3,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sys
-import math 
 
 script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-#project_dir = Path(__file__).parent
-#input_dir = project_dir / "input_main_analyses"
-#output_dir = project_dir / "joined_figures"
-
 input_dir = project_dir / "main_analyses" / "input_main_analyses"
 output_dir = script_dir / "joined_figures"
 
 output_dir.mkdir(exist_ok=True)
+
 
 def create_separate_histograms(dfs, output_file):
     labels = [
@@ -25,11 +21,6 @@ def create_separate_histograms(dfs, output_file):
         "Disulfide Bonds", 
         "Zero-Length"
     ]
-
-    #all_values = pd.concat(
-    #    [df["distance_difference"].dropna() for df in dfs]
-    #)
-    #bins = np.histogram_bin_edges(all_values, bins="auto")
 
     fig, axes = plt.subplots(
         1, 4,
@@ -74,6 +65,7 @@ def create_separate_histograms(dfs, output_file):
     plt.savefig(output_file, dpi=300)
     plt.close()
 
+
 def create_histogram(dfs, output_file):
     labels = [
         "Amine-Reactive",
@@ -103,11 +95,6 @@ def create_histogram(dfs, output_file):
     plt.xlabel("Distance difference (Å)")
     plt.ylabel("Crosslinks (%)")
     plt.legend()
-
-    #xmin = math.floor(merged["distance_difference"].min())
-    #xmax = math.ceil(merged["distance_difference"].max())
-    #plt.xlim(xmin, xmax)
-    #plt.xticks(range(xmin, xmax+1, 5))
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     plt.close()
@@ -138,6 +125,7 @@ def prepare_all_data(selected_dirs):
         dfs.append(merged)
 
     return dfs
+
 
 def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
     """

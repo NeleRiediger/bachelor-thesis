@@ -65,6 +65,7 @@ def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     plt.close()
+    
 
 def main():
     script_dir = Path(__file__).parent
@@ -78,6 +79,10 @@ def main():
         "Disulfide\nBonds", 
         "Zero-\nLength"
     ]
+
+    #-----------------------
+    # CA stacked bar chart 
+    #-----------------------
 
     validation_comparison_ca_file = output_dir / "validity_comparison_ca.png"
 
@@ -103,9 +108,9 @@ def main():
         output_file=validation_comparison_ca_file,
     )
 
-    #crosslinkers = ["C\N{GREEK SMALL LETTER ALPHA} atoms", "exact reactive atoms"]
-    #valid = [originally_valid/ len(merged) * 100, finally_valid/ len(merged) * 100]
-    #invalid = [originally_invalid/ len(merged) * 100, finally_invalid/ len(merged) * 100]
+    #--------------------------
+    # exact stacked bar chart 
+    #--------------------------
 
     validation_comparison_exact_file = output_dir / "validity_comparison_exact.png"
 

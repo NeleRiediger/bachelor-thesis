@@ -1,12 +1,5 @@
 from pathlib import Path
 import pandas as pd
-import sys
-
-#script_dir = Path(__file__).resolve().parent
-#project_dir = script_dir.parent
-#sys.path.insert(0, str(project_dir))
-#from helpers.input_file_selection import choose_file
-
 
 script_dir = Path(__file__).parent
 project_dir = script_dir.parent

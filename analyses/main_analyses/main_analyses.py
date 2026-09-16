@@ -4,6 +4,15 @@ import numpy as np
 import math 
 from pathlib import Path
 
+def highlight_validity_reclassifications(row):
+    if row["valid_crosslink_ca"] == True and row["valid_crosslink_exact"] == False: 
+        return ["background-color: orange"] * len(row)
+
+    if row["valid_crosslink_ca"] == False and row["valid_crosslink_exact"] == True: 
+        return ["background-color: lightblue"] * len(row)
+
+    return [""] * len(row)
+
 def add_coloring_info_column(df):
     conditions = [
         (df["valid_crosslink_ca"] == True) & (df["valid_crosslink_exact"] == False),
@@ -14,53 +23,37 @@ def add_coloring_info_column(df):
     df["color"] = np.select(conditions, choices, default="none")
     return df
 
-def create_relevant_df_excerpt(df):
-    group_columns = [
-        "Protein_id1",
-        "reactive_atom1_ca",
-        "reactive_atom2_ca",
-        "alphafold_distance_ca",
-        "valid_crosslink_ca",
-        "reactive_atom1_exact",
-        "reactive_atom2_exact",
-        "alphafold_distance_exact",
-        "valid_crosslink_exact",
-        #"relevant_pae_exact",
-        "distance_difference",
-        "absolute_difference",
-    ]
-    df["alphafold_distance_ca"] = df["alphafold_distance_ca"].round(2)
-    df["alphafold_distance_exact"] = df["alphafold_distance_exact"].round(2)
-    #df["relevant_pae_exact"] = df["relevant_pae_exact"].round(2)
-    df["distance_difference"] = df["distance_difference"].round(2)
-    df["absolute_difference"] = df["absolute_difference"].round(2)
-    result = (
-        df[group_columns]
-        .groupby(group_columns, dropna=False)
-        .size()
-        .reset_index(name="count")
-    )
-    result = result.sort_values(
-        "absolute_difference",
-        ascending=False
-    )
-
+def get_df_excerpt_middle(df):
     n = 23
     start = 157
-    middle = result.iloc[start:start+n]
+    middle = df.iloc[start:start+n]
 
     omitted=pd.DataFrame(
-        [["..."] * len(result.columns)],
-        columns = result.columns
+        [["..."] * len(df.columns)],
+        columns = df.columns
     )
     display_df = pd.concat(
         [omitted, middle, omitted],
         ignore_index=True
     )
+    return display_df
 
-    color_annotated_df = add_coloring_info_column(display_df)
+def get_df_beginning_end(df): 
+    if len(df) > 28:
+        first = df.head(12)
+        last = df.tail(12)
+        omitted=pd.DataFrame(
+            [["..."] * len(df.columns)],
+            columns = df.columns
+        )
+        display_df = pd.concat(
+            [first, omitted, last],
+            ignore_index=True
+        )
+    else:
+        display_df = df.copy()
+    return display_df
 
-    return color_annotated_df 
 
 def create_reduced_df(df):
     group_columns = [
@@ -73,13 +66,13 @@ def create_reduced_df(df):
         "reactive_atom2_exact",
         "alphafold_distance_exact",
         "valid_crosslink_exact",
-        #"relevant_pae_exact",
+        "relevant_pae_exact",
         "distance_difference",
         "absolute_difference",
     ]
     df["alphafold_distance_ca"] = df["alphafold_distance_ca"].round(2)
     df["alphafold_distance_exact"] = df["alphafold_distance_exact"].round(2)
-    #df["relevant_pae_exact"] = df["relevant_pae_exact"].round(2)
+    df["relevant_pae_exact"] = df["relevant_pae_exact"].round(2)
     df["distance_difference"] = df["distance_difference"].round(2)
     df["absolute_difference"] = df["absolute_difference"].round(2)
     result = (
@@ -93,38 +86,21 @@ def create_reduced_df(df):
         ascending=False
     )
     
-    if len(result) > 28:
-        first = result.head(12)
-        last = result.tail(12)
-        omitted=pd.DataFrame(
-            [["..."] * len(result.columns)],
-            columns = result.columns
-        )
-        display_df = pd.concat(
-            [first, omitted, last],
-            ignore_index=True
-        )
-    else:
-        display_df = result.copy()
+    df_excerpt_middle = get_df_excerpt_middle(result)
+    df_beginning_end = get_df_beginning_end(result)
 
-    color_annotated_df = add_coloring_info_column(display_df)
-    return color_annotated_df 
+    color_annotated_df_excerpt_middle = add_coloring_info_column(df_excerpt_middle)
+    color_annotated_df_beginning_end = add_coloring_info_column(df_beginning_end)
 
-def highlight_validation(row):
-    if row["valid_crosslink_ca"] == True and row["valid_crosslink_exact"] == False: 
-        return ["background-color: orange"] * len(row)
+    return color_annotated_df_excerpt_middle, color_annotated_df_beginning_end 
 
-    if row["valid_crosslink_ca"] == False and row["valid_crosslink_exact"] == True: 
-        return ["background-color: lightblue"] * len(row)
-
-    return [""] * len(row)
 
 def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     """
     Compares AlphaFold distances calculated using CA and exact binding atoms.
 
     Calculates distance differences and summary statistics, exports the
-    results to CSV files, and generates a histogram and boxplot.
+    results to CSV and XLSX files, and generates a histogram and ecdf.
 
     :param merged: DataFrame containing merged CA and exact-atom results.
     :param output_file: Path used as the base name for output files.
@@ -145,6 +121,10 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
         ascending=False
     )
 
+    #---------------------------------------------------
+    # summary statistics 
+    #---------------------------------------------------
+
     stats = {
         "count": len(merged),
         "mean": merged["distance_difference"].mean(),
@@ -164,40 +144,8 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
         index=False
     )
 
-
-    abs_diff = merged["absolute_difference"]
-    thresholds = [0, 0.5, 1, 2, 5]
-    absolute_changes = []
-
-    for t in thresholds:
-        if t == 0:
-            count = (abs_diff == 0).sum()
-            label = "No change"
-        else:
-            count = (abs_diff < t).sum()
-            label = f"< {t} Å"
-
-        absolute_changes.append(
-            {
-                "threshold": label,
-                "count": count,
-                "percentage": count / len(abs_diff) * 100,
-            }
-        )
-
-    absolute_changes_df = pd.DataFrame(absolute_changes)
-    absolute_changes_file = output_file.with_name(
-        output_file.stem + "_abs_stats.csv"
-    )
-
-    absolute_changes_df.to_csv(
-        absolute_changes_file,
-        index=False
-    )
-
     print("\nDistance difference statistics")
     print("-" * 40)
-
     for key, value in stats.items():
         if key == "count":
             print(f"{key:>10}: {value:.0f}")
@@ -205,16 +153,9 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
             print(f"{key:>10}: {value:.2f} Å")
 
 
-    print("\nAbsolute distance changes")
-    print("-" * 40)
-
-    for _, row in absolute_changes_df.iterrows():
-        print(
-            f"{row['threshold']:>10}: "
-            f"{row['count']:5.0f} "
-            f"({row['percentage']:5.1f}%)"
-        )
-
+    #---------------------------------------------------
+    # histogram 
+    #---------------------------------------------------
 
     histogram_file = output_file.with_name(
         output_file.stem + "_histogram.png"
@@ -235,26 +176,15 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     xmin = math.floor(merged["distance_difference"].min())
     xmax = math.ceil(merged["distance_difference"].max())
     plt.xlim(xmin, xmax)
-    #plt.xticks(range(xmin, xmax+1, 5))
+    
     plt.tight_layout()
     plt.savefig(histogram_file, dpi=300)
     plt.close()
 
 
-    boxplot_file = output_file.with_name(
-        output_file.stem + "_boxplot.png"
-    )
-
-    plt.figure(figsize=(4, 6))
-    plt.boxplot(
-        merged["distance_difference"],
-        orientation="vertical"
-    )
-    plt.ylabel("Distance difference (Å)")
-    plt.title("Distance differences")
-    plt.tight_layout()
-    plt.savefig(boxplot_file, dpi=300)
-    plt.close()
+    #---------------------------------------------------
+    # ecdf 
+    #---------------------------------------------------
 
     ecdf_file = output_file.with_name(
         output_file.stem + "_ecdf.png"
@@ -281,7 +211,12 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
     plt.savefig(ecdf_file, dpi=300)
     plt.close()
 
-    styled = merged.style.apply(highlight_validation, axis=1)
+
+    #---------------------------------------------------
+    # full table highlighted .xlsx
+    #---------------------------------------------------
+
+    styled = merged.style.apply(highlight_validity_reclassifications, axis=1)
     output_df_file = output_file.with_name(
         output_file.stem + "_df.xlsx"
     )
@@ -291,33 +226,38 @@ def compare_distances(merged: pd.DataFrame, output_file: Path) -> None:
             index=False
         )
 
-    reduced_df = create_reduced_df(merged)
+
+    #---------------------------------------------------
+    # excerpts with color information column .csv
+    #---------------------------------------------------
+
+    df_excerpt_middle, df_beginning_end = create_reduced_df(merged)
+
     output_reduced_df_file = output_file.with_name(
         output_file.stem + "_df_reduced.csv"
     )
-    reduced_df.to_csv(output_reduced_df_file)
+    df_beginning_end.to_csv(output_reduced_df_file)
 
-    excerpt_df = create_relevant_df_excerpt(merged)
     output_excerpt_df_file = output_file.with_name(
         output_file.stem + "_df_excerpt.csv"
     )
-    excerpt_df.to_csv(output_excerpt_df_file)
+    df_excerpt_middle.to_csv(output_excerpt_df_file)
+
 
     print("\nOutput files were written to:")
-    print(output_df_file)
     print(stats_file)
-    print(absolute_changes_file)
     print(histogram_file)
-    print(boxplot_file)
     print(ecdf_file)
+    print(output_df_file)
     print(output_reduced_df_file)
+    print(output_excerpt_df_file)
 
 
 def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     """
     Compares CA-based and exact-atom crosslink validation results.
 
-    Calculates a confusion matrix and summarizes changes between the two
+    Calculates a transition confusion matrix, a stacked bar chart and summarizes changes between the two
     validation results.
 
     :param merged: DataFrame containing merged CA and exact-atom results.
@@ -338,6 +278,11 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
         .str.lower()
         .eq("true")
     )
+
+
+    #---------------------------------------------------
+    # transition confusion matrix 
+    #---------------------------------------------------
 
     transition_matrix_counts = pd.crosstab(
         pd.Categorical(
@@ -412,9 +357,14 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     with open(transition_matrix_latex_file, "w") as f:
         f.write(transition_matrix_latex)
 
-    print("\nTransition Matrix:")
+    print("\nTransition Confusion Matrix:")
     print("-" * 40)
     print(transition_matrix_whole)
+
+
+    #---------------------------------------------------
+    # stacked bar chart
+    #---------------------------------------------------
 
     unchanged = (
         ((ca_valid) & (exact_valid)) |
@@ -452,6 +402,11 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
     plt.tight_layout()
     plt.savefig(stacked_bar_chart_file, dpi=300)
     plt.close()
+
+
+    #---------------------------------------------------
+    # summary statistics
+    #---------------------------------------------------
 
     validation_changes = [
         {
@@ -506,7 +461,7 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
         index=False
     )
 
-    print("\nValidation changes")
+    print("\nSummary Statistics")
     print("-" * 40)
 
     for _, row in validation_changes_df.iterrows():
@@ -516,186 +471,12 @@ def compare_validation(merged: pd.DataFrame, output_file: Path) -> None:
             f"({row['percentage']:5.1f}%)"
         )
 
-    print("\nLatex formatting")
-    print("-" * 40)
-    print(r"Classification & $C\alpha$ atom & Changes & exact reactive atom \\")
-    print(fr"Valid & {(originally_valid/ len(merged) * 100):.2f}\% & {(valid_to_invalid/ originally_valid * 100):.2f}\% & {(finally_valid/ len(merged) * 100):.2f}\% \\")
-    print(fr"Invalid & {(originally_invalid/ len(merged) * 100):.2f}\% & {(invalid_to_valid/ originally_invalid * 100):.2f}\% & {(finally_invalid/ len(merged) * 100):.2f}\% \\")
-
+    
     print("\nOutput files were written to:")
-    print(validation_changes_file)
-    print(stacked_bar_chart_file)
+    print(transition_matrix_file)
     print(transition_matrix_latex_file)
-
-"""
-def compare_all_validation_methods(files: dict, output_file: Path) -> None:
-    results = []
-
-    for criterion in VALIDATION_CRITERIA:
-
-        file_ca = files.get(f"{criterion}_CA")
-        file_exact = files.get(f"{criterion}_exact")
-
-        if file_ca is None or file_exact is None:
-            print(f"Skipping {criterion}: missing files.")
-            continue
-
-        df_ca = pd.read_csv(file_ca)
-        df_exact = pd.read_csv(file_exact)
-
-        merged = merge_dfs(df_ca, df_exact)
-
-        ca_valid = merged["valid_crosslink_ca"]
-        exact_valid = merged["valid_crosslink_exact"]
-
-        remained_valid = (ca_valid & exact_valid).sum()
-        remained_invalid = ((~ca_valid) & (~exact_valid)).sum()
-        became_valid = ((~ca_valid) & exact_valid).sum()
-        became_invalid = (ca_valid & (~exact_valid)).sum()
-
-        results.append(
-            {
-                "Method": criterion,
-                "Remained valid": int(remained_valid),
-                "Remained invalid": int(remained_invalid),
-                "Became valid": int(became_valid),
-                "Became invalid": int(became_invalid),
-                "Net gain": int(became_valid - became_invalid),
-                "Improvement": f"{became_valid / max(1, (~ca_valid).sum()):.1%}",
-            }
-        )
-
-    result = pd.DataFrame(results)
-
-    print("\nValidation changes by method")
-    print("=" * 90)
-    print(result.to_string(index=False))
-
-    if result is not None and not result.empty:
-        result.to_csv(output_file, index=False)
-
-    print(f"Output file was written to: ")
-    print(output_file)
-"""  
-
-
-"""
-def analyse_by_binding_site(files: dict, output_file: Path) -> None: 
-    validation_criterion = input(
-        f"Validation criterion {sorted(VALIDATION_CRITERIA)}: "
-    ).strip()
-
-    if validation_criterion not in VALIDATION_CRITERIA:
-        print(f"Unknown validation criterion: {validation_criterion}")
-        return None
-
-    ca_key = f"{validation_criterion}_CA"
-    exact_key = f"{validation_criterion}_exact"
-
-    missing = [
-        key for key in (ca_key, exact_key)
-        if files.get(key) is None
-    ]
-
-    if missing:
-        print("Missing files:")
-        for key in missing:
-            print(f" - {key}")
-        return None
-
-    df_ca = pd.read_csv(files[ca_key])
-    df_exact = pd.read_csv(files[exact_key])
-
-    merged = merge_dfs(df_ca, df_exact)
-
-    merged["distance_difference"] = (
-        merged["alphafold_distance_exact"]
-        - merged["alphafold_distance_ca"]
-    )
-
-    merged["validation_change"] = "unchanged"
-
-    merged.loc[
-        (~merged["valid_crosslink_ca"]) &
-        (merged["valid_crosslink_exact"]),
-        "validation_change"
-    ] = "became_valid"
-
-    merged.loc[
-        (merged["valid_crosslink_ca"]) &
-        (~merged["valid_crosslink_exact"]),
-        "validation_change"
-    ] = "became_invalid"
-
-
-    merged["atom_pair"] = (
-        merged["reactive_atom1_exact"].astype(str)
-        + "-"
-        + merged["reactive_atom2_exact"].astype(str)
-    )
-
-
-    analysis = (
-        merged
-        .groupby("atom_pair")
-        .agg(
-            count=("atom_pair", "size"),
-            mean_distance_change=(
-                "distance_difference",
-                "mean"
-            ),
-            median_distance_change=(
-                "distance_difference",
-                "median"
-            ),
-            became_valid=(
-                "validation_change",
-                lambda x: (x == "became_valid").sum()
-            ),
-            became_invalid=(
-                "validation_change",
-                lambda x: (x == "became_invalid").sum()
-            ),
-            unchanged=(
-                "validation_change",
-                lambda x: (x == "unchanged").sum()
-            ),
-        )
-        .reset_index()
-    )
-
-    analysis["improvement_rate"] = (
-        analysis["became_valid"]
-        /
-        analysis["count"]
-    )
-
-    analysis = analysis.sort_values(
-        [
-            "became_valid",
-            "improvement_rate"
-        ],
-        ascending=False
-    )
-
-    result_file = output_file.with_name(
-        output_file.stem + "_binding_atom_analysis.csv"
-    )
-
-    analysis.to_csv(
-        result_file,
-        index=False
-    )
-
-    print("\nBinding atom analysis")
-    print("=" * 90)
-    print(
-        analysis.to_string(index=False)
-    )
-
-    print(f"\nOutput written to:")
-    print(result_file)
-"""
+    print(stacked_bar_chart_file)
+    print(validation_changes_file)
 
 
 def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
@@ -875,8 +656,6 @@ def main():
 FUNCTIONS = {
     "compare_distances": compare_distances,
     "compare_validation": compare_validation,
-    #"compare_all_validation_methods": compare_all_validation_methods,
-    #"analyse_by_binding_site": analyse_by_binding_site,
 }
 
 if __name__ == "__main__":
