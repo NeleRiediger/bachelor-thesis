@@ -1,0 +1,6 @@
+,Protein_id1,reactive_atom1_ca,reactive_atom2_ca,alphafold_distance_ca,valid_crosslink_ca,reactive_atom1_exact,reactive_atom2_exact,alphafold_distance_exact,valid_crosslink_exact,relevant_pae_exact,distance_difference,absolute_difference,count,color
+0,...,...,...,...,...,...,...,...,...,...,...,...,...,none
+1,P02769,CA,CA,10.03,False,CG,NZ,10.42,False,2,0.4,0.4,1,none
+2,P02769,CA,CA,6.57,False,CD,NZ,6.22,False,1,-0.35,0.35,1,none
+3,Q29443,CA,CA,5.56,False,CD,NZ,5.65,False,2,0.09,0.09,2,none
+4,...,...,...,...,...,...,...,...,...,...,...,...,...,none
