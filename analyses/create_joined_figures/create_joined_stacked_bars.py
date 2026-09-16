@@ -11,44 +11,36 @@ def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
     plt.bar(crosslinkers, invalid, bottom=valid, label="Invalid")
 
     for i, (val, inval) in enumerate(zip(valid, invalid)):
+        if val < 5: 
+            val_y = val+1 
+            val_va = "bottom"
+        else: 
+            val_y = val/2
+            val_va = "center"
+
+        if inval < 5: 
+            inval_y = val+inval
+            inval_va = "bottom"
+        else: 
+            inval_y = val+inval/2
+            inval_va = "center"
+
         plt.text(
             i,
-            val/2,
+            val_y,
             f"{val:.2f}%",
             ha="center",
-            va="center",
+            va=val_va,
             fontsize=14,
             fontfamily="serif"
         )
 
-        if round(inval,2) == 0:
-            plt.text(
+        plt.text(
                 i,
-                inval+2,
+                inval_y,
                 f"{inval:.2f}%",
                 ha="center",
-                va="bottom",
-                fontsize=14,
-                fontfamily="serif"
-            )
-            
-        elif inval < 5:
-            plt.text(
-                i,
-                val+inval/1,
-                f"{inval:.2f}%",
-                ha="center",
-                va="bottom",
-                fontsize=14,
-                fontfamily="serif"
-            )
-        else: 
-            plt.text(
-                i,
-                val+inval/2,
-                f"{inval:.2f}%",
-                ha="center",
-                va="center",
+                va=inval_va,
                 fontsize=14,
                 fontfamily="serif"
             )
@@ -65,7 +57,7 @@ def create_stacked_bar_chart(crosslinkers, valid, invalid, output_file):
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     plt.close()
-    
+
 
 def main():
     script_dir = Path(__file__).parent
