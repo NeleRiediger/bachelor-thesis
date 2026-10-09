@@ -6,11 +6,7 @@ import numpy as np
 script_dir = Path(__file__).parent
 project_dir = script_dir.parent
 input_dir = project_dir / "main_analyses" / "input_main_analyses"
-output_dir = script_dir / "statistical_test_results"
 
-output_dir.mkdir(exist_ok=True)
-
-#def welch_t_test(dfs, output_file):
 def welch_t_test(dfs):
     data1 = dfs[0]["distance_difference"].dropna()
     data2 = dfs[1]["distance_difference"].dropna()
@@ -41,13 +37,13 @@ def welch_t_test(dfs):
     
 
     print("Welch-t-Test")
-    print(f"Stichprobengröße 1: {len(data1)}")
-    print(f"Stichprobengröße 2: {len(data2)}")
-    print(f"Mittelwert 1: {data1.mean():.2f} Å")
-    print(f"Mittelwert 2: {data2.mean():.2f} Å")
-    print(f"Mean difference: {mean_diff:.2f} Å")
-    print(f"t-Statistik: {result.statistic:.3f}")
-    print(f"p-Wert: {result.pvalue:.3f}")
+    print(f"sample size 1: {len(data1)}")
+    print(f"sample size 2: {len(data2)}")
+    print(f"mean 1: {data1.mean():.2f} Å")
+    print(f"mean 2: {data2.mean():.2f} Å")
+    print(f"mean difference: {mean_diff:.2f} Å")
+    print(f"t-statistic: {result.statistic:.3f}")
+    print(f"p-value: {result.pvalue:.3f}")
     print(f"95% CI: [{ci_low:.2f}, {ci_high:.2f}] Å")
 
 def merge_dfs(df_ca: pd.DataFrame, df_exact: pd.DataFrame) -> pd.DataFrame:
@@ -156,23 +152,17 @@ def main():
             except ValueError:
                 print("Invalid selection.")
 
-    output_file = output_dir / "results.png"
-
     if not selected_dirs: 
         print("No directories selected.")
         return 
     
     try: 
         dfs = prepare_all_data(selected_dirs)
-        #welch_t_test(dfs, output_file)
         welch_t_test(dfs)
 
     except ValueError as error: 
         print(f"\nError: {error}")
         return
-    
-    print("\nOutput files were written to:")
-    print(output_file)
     
 
 if __name__ == "__main__":
