@@ -1,6 +1,12 @@
 # Ignore everything in these directories:
 pdResult-parsing/input/*
 pdResult-parsing/output/*
+analyses/protein_combinations/input_protein_combinations/*
+analyses/protein_combinations/output_protein_combinations/*
+analyses/create_joined_figures/joined_figures/*
+analyses/create_merged_input_data/merged_dfs/*
+analyses/main_analyses/input_main_analyses/*
+analyses/main_analyses/output_main_analyses/*
 
 # Keep the directories themselves:
 !pdResult-parsing/input/.gitkeep
