@@ -1,8 +1,0 @@
-category,count,percentage
-Unchanged,234,89.31297709923665
-Originally invalid (CA),158,60.30534351145038
-Originally valid (CA),104,39.69465648854962
-Invalid → Valid,4,2.5316455696202533
-Valid → Invalid,24,23.076923076923077
-Finally invalid (Exact),178,67.93893129770993
-Finally valid (Exact),84,32.06106870229007

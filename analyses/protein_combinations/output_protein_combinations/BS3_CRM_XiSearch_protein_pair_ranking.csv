@@ -1,6 +1,0 @@
-Protein_id1,Protein_id2,Is_intra_crosslink,Count
-O95149,Q6P5F9,False,46
-P62826,Q6P5F9,False,45
-Q6P5F9,Q6P5F9,True,39
-O95149,O95149,True,25
-P62826,P62826,True,16
